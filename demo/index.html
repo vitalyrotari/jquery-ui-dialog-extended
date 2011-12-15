@@ -1,0 +1,43 @@
+<!doctype html>
+<html>
+<head>
+    <title></title>
+    <link rel="stylesheet" href="../css/Aristo/Aristo.css">
+    <link rel="stylesheet" href="../css/ui-dialog-extended.css">
+</head>
+<body>
+
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.js"></script>
+<script src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.16/jquery-ui.js"></script>
+<script src="../js/ui-dialog-extended.js"></script>
+<script>document.write('<script src="http://' + (location.host || 'localhost').split(':')[0] + ':35729/livereload.js?snipver=1"></' + 'script>')</script>
+<script>
+    (function($){
+        this.testDialog = $.makeDialog("test-dialog", "Test Dialog", {
+           height: 240
+        });
+
+        if (!this.testDialog.data("exists")) {
+            this.testDialog.dialog("buttonsAdd", {
+                "Accept": {
+                    icons: {
+                        primary: 'ui-icon-circle-check'
+                    },
+                    callback: function () {
+
+                    }
+                }
+            }, true)
+        }
+
+        this.testDialog
+            .html("Lorem ipsum dolor sit amet, consectetur adipiscing elit. In ut arcu mi, sit amet interdum lacus. Maecenas eu felis metus, vitae commodo massa. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Pellentesque a elit lorem. Vestibulum ut lacus eget orci aliquam fringilla ut eu erat. Suspendisse potenti. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos. Nullam a enim in massa venenatis rutrum. Aliquam sed justo enim. Quisque eu leo nec nibh semper mattis. Integer varius volutpat ante id scelerisque. Aliquam sem dolor, malesuada vel volutpat ut, rhoncus sit amet urna. Proin et leo risus. Cras magna dui, scelerisque nec ultricies in, cursus a orci. Donec a feugiat turpis. Donec lorem ipsum, sagittis at pellentesque nec, malesuada in ipsum.")
+            .dialog("open")
+            .dialog("messageShow", ['Thirst message...', 'Second message...'], "success");
+        
+        this.testDialog.dialog("progress", 44);
+    }).call(this, jQuery);
+</script>
+</body>
+</html>
+
