@@ -9,24 +9,30 @@ $ = @jQuery
 
 #----------------------------------------------------------------------------------------
 dialog =
+    elems: {}
     _init: () ->
-        @elems = {}
         @_createMessageBox();
 
         if @options.autoOpen
             @open()
 
     _content: () ->
-        return @elems.content or= () =>
+        if not @elems.hasOwnProperty("content") or not @elems.content.length
             @elems.content = @uiDialog.find(".ui-dialog-content")
+        
+        return @elems.content
 
     _buttonsPane: () ->
-        return @elems.buttonsPane or= () =>
+        if not @elems.hasOwnProperty("buttonsPane") or not @elems.buttonsPane.length
             @elems.buttonsPane = @uiDialog.find(".ui-dialog-buttonpane")
+        
+        return @elems.buttonsPane
 
     _buttons: () ->
-        return @elems.buttons or= () =>
+        if not @elems.hasOwnProperty("buttons") or not @elems.buttons.length
             @elems.buttons = @_buttonsPane().find("button")
+
+        return @elems.buttons
     
     _createButtons: (buttons) ->
         hasButtons = false
@@ -80,22 +86,22 @@ dialog =
 
             buttonsPane.appendTo(@uiDialog)
 
-
+        @elems.buttonsPane = buttonsPane
         return @
 
     _createMessageBox: () ->
         if @elems.hasOwnProperty("message")
             return;
 
-        @elems.message = $("<div class=\"ui-dialog-message\">\
-                <span class=\"ui-dialog-message-icon\"></span>\
-                <span class=\"ui-icon ui-icon-close\"></span>\
-                <ul></ul>\
-                </div>");
+        @elems.message = $("<div class=\"ui-dialog-message\">"+
+                "<span class=\"ui-dialog-message-icon\"></span>"+
+                "<span class=\"ui-icon ui-icon-close\"></span>"+
+                "<ul></ul>"+
+                "</div>");
 
-        @elems.message.on "click", ".ui-icon-close", {widget: @}, (event) ->
+        @elems.message.on "click", ".ui-icon-close", {instance: @}, (event) ->
             event.preventDefault()
-            event.data.widget.messageClose()
+            event.data.instance.messageClose()
             
         @_content().before(@elems.message)
 
@@ -104,14 +110,13 @@ dialog =
         options = @options
         body = $("body")
         doc = $(document)
-        heightBeforeDrag
+        heightBeforeDrag = 0
 
         filteredUi = (ui) ->
             return {position: ui.position, offset: ui.offset}
 
         collapse = (dialog, state) ->
             dialog = $(dialog);
-            elems = [@_content()[0], @_buttonsPane()[0]]
             message = @elems.message
 
             if state is true and message.is(":visible")
@@ -119,13 +124,14 @@ dialog =
             else if state is false and message.attr("show-after-drag")
                 message.removeAttr("show-after-drag").show()
 
-            if elems.length > 0
-                if state is false
-                    elems.show()
-                    dialog.find(".ui-resizable-handle").show()
-                else
-                    elems.hide();
-                    dialog.find(".ui-resizable-handle").hide()
+            if state is false
+                @_content().show()
+                @_buttonsPane().show()
+                dialog.find(".ui-resizable-handle").show()
+            else
+                @_content().hide()
+                @_buttonsPane().hide()
+                dialog.find(".ui-resizable-handle").hide()
 
             dialog.css({"height": "auto"})
 
@@ -165,11 +171,6 @@ dialog =
 
     _setOption: (key, value) ->
         switch key
-            ###
-            handling of deprecated beforeclose (vs beforeClose) option
-            Ticket #4669 http://dev.jqueryui.com/ticket/4669
-            TODO: remove in 1.9pre
-            ###
             when "beforeclose"
                 key = "beforeClose"
             when "buttons"
@@ -178,13 +179,11 @@ dialog =
                 # ensure that we always pass a string
                 @uiDialogTitlebarCloseText.text("#{value}")
             when "dialogClass"
-                @uiDialog
-                        .removeClass(@options.dialogClass)
-                        .addClass(uiDialogClasses + value)
+                @uiDialog.removeClass(@options.dialogClass).addClass(uiDialogClasses + value)
             when "disabled"
                 @uiDialog[if value then "addClass" : "removeClass"]("ui-dialog-disabled");
             when "draggable"
-                var isDraggable = @uiDialog.is(":data(draggable)")
+                isDraggable = @uiDialog.is(":data(draggable)")
                 if isDraggable and not value
                     @uiDialog.draggable("destroy")
 
@@ -194,7 +193,7 @@ dialog =
                 @_position(value)
             when "resizable"
                 # currently resizable, becoming non-resizable
-                var isResizable = @uiDialog.is(":data(resizable)")
+                isResizable = @uiDialog.is(":data(resizable)")
                 if isResizable and not value
                     @uiDialog.resizable('destroy')
 
@@ -213,7 +212,7 @@ dialog =
         $.Widget.prototype._setOption.apply(@, arguments)
 
     close: (event) ->
-        if false === @_trigger("beforeClose", event)
+        if false is @_trigger("beforeClose", event)
             return
 
         if @overlay
@@ -226,7 +225,7 @@ dialog =
         @waiting(false)
 
         if @options.hide
-            @uiDialog.hide(@options.hide, () =>
+            @uiDialog.hide @options.hide, () =>
                 @_trigger("close", event)
         else
             @uiDialog.hide();
@@ -241,7 +240,7 @@ dialog =
             maxZ = 0
 
             $(".ui-dialog").each () ->
-                if this !== instance.uiDialog[0]
+                if @ isnt instance.uiDialog[0]
                     thisZ = $(this).css("z-index")
                     if !isNaN(thisZ)
                         maxZ = Math.max(maxZ, thisZ)
@@ -251,16 +250,15 @@ dialog =
         return @
 
     progress: (value) ->
-        elem = @elems.progress or= () =>
-            obj = @elems.progress = $("<div></div>")
+        if not @elems.hasOwnProperty("progress")
+            @elems.progress = $("<div></div>")
                 .progressbar({value: value})
                 .removeClass('ui-corner-all')
-            
-            @_buttonsPane().before(obj)
-            return obj
 
-        elem[if value > 0 then "show" else "hide"]()
-            .progressbar("value", 0)
+            @_buttonsPane().before(@elems.progress)
+
+        @elems.progress[if value > 0 then "show" else "hide"]()
+            .progressbar("value", value)
 
     # Add Buttons
     buttonsAdd: (elems, merge) ->
@@ -353,7 +351,7 @@ dialog =
 
         rows = ""
         for message in messages
-            rows += "<li>#{msg}</li>\n"
+            rows += "<li>#{message}</li>\n"
 
         elem
             .addClass("ui-dialog-message-#{type}")
@@ -363,10 +361,10 @@ dialog =
                 .html(rows)
 
         if elem.is(":hidden")
-            elem.show("slide", {direction: "down"}, 500)
+            elem.show("slide", {direction: "up"}, 300)
 
     # Close Message Box
-    closeMessage: () ->
+    messageClose: () ->
         @uiDialog.removeClass("ui-dialog-has-message")
         @elems.message
             .removeAttr("show-after-drag")
@@ -420,7 +418,7 @@ createDialogElement = (id, title, options, dialog) ->
 
 #----------------------------------------------------------------------------------------
 $.makeDialog = (id, title, options) ->
-    default =
+    def =
         autoOpen: false
         dragCollapse: true
         resizable: false
@@ -434,7 +432,7 @@ $.makeDialog = (id, title, options) ->
                 callback: () ->
                     $(this).trigger("dialogcancel").dialog("close")
 
-    options = $.extend(default, options or= {})
+    options = $.extend(def, options or= {})
 
     if $.type(id) isnt "string"
         return null
